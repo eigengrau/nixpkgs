@@ -116,7 +116,7 @@ in {
 
       preStart = ''
         cd "${cfg.keyPath}"
-        if ! test -f ${cfg.selector}.private; then
+        if ! test -a ${cfg.selector}.private; then
           ${pkgs.opendkim}/bin/opendkim-genkey -s ${cfg.selector} -d all-domains-generic-key
           echo "Generated OpenDKIM key! Please update your DNS settings:\n"
           echo "-------------------------------------------------------------"
