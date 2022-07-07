@@ -1297,6 +1297,8 @@ with pkgs;
 
   xcd = callPackage ../tools/misc/xcd { };
 
+  xpup = callPackage ../tools/text/xml/xpup { };
+
   xrootd = callPackage ../tools/networking/xrootd { };
 
   xtrt = callPackage ../tools/archivers/xtrt { };
