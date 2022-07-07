@@ -15076,6 +15076,8 @@ with pkgs;
 
   adreaper = callPackage ../tools/security/adreaper { };
 
+  adr-tools = callPackage ../development/tools/adr-tools { };
+
   adtool = callPackage ../tools/admin/adtool { };
 
   inherit (callPackage ../development/tools/alloy {
