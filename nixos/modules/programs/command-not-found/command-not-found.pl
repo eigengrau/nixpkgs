@@ -1,14 +1,13 @@
-#! @perl@/bin/perl -w
+#! /nix/store/qwjarykv3gc46acwh8kfqm3sx7qjdyka-perl-5.36.0-env/bin/perl -w
 
 use strict;
 use DBI;
 use DBD::SQLite;
 use String::ShellQuote;
 use Config;
-
 my $program = $ARGV[0];
 
-my $dbPath = "@dbPath@";
+my $dbPath = "/nix/store/x32mvbjy3l26p5fwknsq5qkpii3rjzxa-programs-sqlite";
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=$dbPath", "", "")
     or die "cannot open database `$dbPath'";
@@ -22,6 +21,15 @@ my $res = $dbh->selectall_arrayref(
     { Slice => {} }, $system, $program);
 
 my $len = !defined $res ? 0 : scalar @$res;
+
+sub exec_shell {
+    my $package = shift;
+    if ($ENV{"COMMAND_NOT_FOUND_FLAKE"} // "") {
+       exec("nix", "shell", "$ENV{'COMMAND_NOT_FOUND_FLAKE'}#$package", "--command", @ARGV);
+    } else {
+       exec("nix-shell", "-p", $package, "--run", shell_quote("exec", @ARGV));
+    }
+}
 
 if ($len == 0) {
     print STDERR "$program: command not found\n";
@@ -39,7 +47,7 @@ if ($len == 0) {
                 }
             }
         }
-        exec("nix-shell", "-p", $package, "--run", shell_quote("exec", @ARGV));
+        exec_shell($package);
     } else {
         print STDERR <<EOF;
 The program '$program' is not in your PATH. You can make it available in an
@@ -61,8 +69,7 @@ EOF
             # so we start from 1
             $choice = <STDIN> + 0;
             if (1 <= $choice && $choice <= $len) {
-                exec("nix-shell", "-p", @$res[$choice - 1]->{package},
-                    "--run", shell_quote("exec", @ARGV));
+                exec_shell(@$res[$choice - 1]->{package});
             }
         }
     } else {
@@ -70,7 +77,11 @@ EOF
 The program '$program' is not in your PATH. It is provided by several packages.
 You can make it available in an ephemeral shell by typing one of the following:
 EOF
-        print STDERR "  nix-shell -p $_->{package}\n" foreach @$res;
+        if ($ENV{"COMMAND_NOT_FOUND_FLAKE"} // "") {
+            print STDERR "  nix shell $ENV{'COMMAND_NOT_FOUND_FLAKE'}#$_->{package}\n" foreach @$res;
+        } else {
+            print STDERR "  nix-shell -p $_->{package}\n" foreach @$res;   
+        }
     }
 }
 
